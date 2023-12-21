@@ -1,2 +1,2 @@
-./figures
-./Pipfile.lock
+/Pipfile.lock
+/figures/

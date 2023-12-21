@@ -1,2 +1,5 @@
 /Pipfile.lock
 /figures/
+data*.gdf
+*.xdf
+/data/

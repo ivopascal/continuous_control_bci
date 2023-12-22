@@ -8,6 +8,7 @@ mne = "*"
 scikit-learn = "*"
 jupyterlab = "*"
 scipy = "*"
+seaborn = "*"
 
 [dev-packages]
 

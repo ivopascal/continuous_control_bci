@@ -9,15 +9,24 @@ from continuous_control_bci.modelling.csp_classifier import create_csp_classifie
 
 def main():
     raw = load_from_file("./data/pilot_1/calibration/horse_reighns_pilot_driving.gdf")
-    raw = raw.set_eeg_reference()
+    # raw = raw.set_eeg_reference()
     raw = adjust_info(raw)
+    raw = raw.set_eeg_reference(ref_channels='average', ch_type='eeg')
+    raw.drop_channels('Cz')
+
     raw = apply_causal_filters(raw)
-    epochs = make_epochs(raw)
+    include_rest = True
+    epochs = make_epochs(raw, include_rest=include_rest)
     X_train, _, y_train, _ = epochs_to_train_test(epochs)
     print("Training classifier. This may take a while..")
     clf, y_pred = create_csp_classifier(X_train, y_train)
-    print(classification_report(y_train, y_pred, target_names=["Left", "Right", "Rest"]))
-    ConfusionMatrixDisplay.from_predictions(y_train, y_pred, display_labels=["Left", "Right", "Rest"],
+    print("Classifier trained!")
+    if include_rest:
+        target_names = ["Left", "Right", "Rest"]
+    else:
+        target_names = ["Left", "Right"]
+    print(classification_report(y_train, y_pred, target_names=target_names))
+    ConfusionMatrixDisplay.from_predictions(y_train, y_pred, display_labels=target_names,
                                             normalize='true')
     plt.title("Confusion matrix on calibration data")
     plt.savefig("./figures/confusion_matrix_calibration.pdf")

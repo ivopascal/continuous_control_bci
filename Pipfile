@@ -9,6 +9,8 @@ scikit-learn = "*"
 jupyterlab = "*"
 scipy = "*"
 seaborn = "*"
+pyxdf = "*"
+pyqt5 = "*"
 
 [dev-packages]
 

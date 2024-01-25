@@ -16,7 +16,7 @@ def create_csp_classifier(X_train: np.ndarray, y_train: np.ndarray) -> Tuple[Pip
     :param y_train:
     :return:
     """
-    clf_eeg = Pipeline([("CSP", CSP(n_components=4, reg=None, log=True, norm_trace=False)),
+    clf_eeg = Pipeline([("CSP", CSP(n_components=6, reg=None, log=True, norm_trace=False)),
                         ("classifier", LogisticRegression())])
     y_pred = cross_val_predict(clf_eeg, X_train, y_train, cv=5)
 

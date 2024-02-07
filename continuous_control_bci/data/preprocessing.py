@@ -1,7 +1,9 @@
 from typing import Tuple
 
+import matplotlib.pyplot as plt
 import mne.io
 import numpy as np
+from mne.preprocessing import ICA
 from sklearn.model_selection import train_test_split
 
 LEFT_HAND_EVENT = "769"
@@ -19,15 +21,13 @@ def apply_causal_filters(raw: mne.io.Raw, l_eeg=5, u_eeg=35) -> mne.io.Raw:
     return raw
 
 
-def make_epochs(raw: mne.io.Raw, include_rest=True) -> mne.Epochs:
+def make_epochs(raw: mne.io.Raw, include_rest=True, tmin=1.25, tmax=5) -> mne.Epochs:
     events, _ = mne.events_from_annotations(raw, event_id={LEFT_HAND_EVENT: 0,
                                                            RIGHT_HAND_EVENT: 1})
-    # Now we'd expect the movement 1 + 1.25 = 2.25 seconds in. The exact timing may be learned
-    # It should stay until 6 seconds in. The first and last second should both be "empty"
+    # Now we'd expect the movement 1.25 = 1.25 seconds in. The exact timing may be learned
+    # It should stay for 3.75 seconds. The first and last second should both be "empty"
     # These would be the optimal "during movement" timings. For visualisation, you might also consider
     # preparation or rebound effects.
-    tmin = 2.25
-    tmax = 2.25 + 3.75
 
     event_ids = dict(left=0, right=1)
 
@@ -64,7 +64,7 @@ def make_epochs(raw: mne.io.Raw, include_rest=True) -> mne.Epochs:
             baseline=None,
             preload=True,
         )
-        rest_epochs.shift_time(2.25 - 0.5)  # This only changes the metadata time. The data stays the same
+        rest_epochs.shift_time(1.25 - 0.5)  # This only changes the metadata time. The data stays the same
 
         epochs = mne.concatenate_epochs([epochs, rest_epochs], add_offset=False)
 
@@ -86,3 +86,19 @@ def epochs_to_train_test(epochs: mne.Epochs, picks=["eeg"]) -> Tuple[np.ndarray,
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
 
     return X_train, X_test, y_train, y_test
+
+
+def manual_clean_ica(raw: mne.io.Raw, exclude=None):
+    ica = ICA(n_components=20, random_state=42)
+    ica.fit(raw)
+    if exclude:
+        ica.exclude = exclude
+        print(f"Rejecting ICs: {ica.exclude}")
+        return
+
+    bad_eog, _ = ica.find_bads_eog(raw)
+    print(f"Bad EOG predicted: {bad_eog}")
+    ica.plot_components()
+    plt.show()
+    ica.apply(raw)
+    print(f"Rejecting ICs: {ica.exclude}")

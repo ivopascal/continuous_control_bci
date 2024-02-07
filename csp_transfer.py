@@ -5,14 +5,20 @@ import mne
 import numpy as np
 from sklearn.metrics import classification_report, ConfusionMatrixDisplay
 
-from continuous_control_bci.data.load_data import load_from_file, adjust_info
+from continuous_control_bci.data.emg_events import make_rough_emg_events
+from continuous_control_bci.data.load_data import load_from_file, adjust_info, get_driving_epochs_for_csp
 from continuous_control_bci.data.preprocessing import apply_causal_filters, make_epochs, epochs_to_train_test
 from continuous_control_bci.modelling.csp_classifier import create_csp_classifier
 from sklearn.metrics import f1_score
 
+from continuous_control_bci.util import emg_classes_to_eeg_classes
+from plot_csp_continuous import get_streams_from_xdf, CHANNEL_TYPE_MAPPING
+
+
+
+
 
 def main():
-    # raw = load_from_file("./data/pilot_1/calibration/horse_reighns_pilot_driving.gdf")
     raw = load_from_file(glob(f'./data/sub-P{subject_id}/motor-imagery-csp-{subject_id}-acquisition*.gdf')[0])
 
     raw = adjust_info(raw)
@@ -35,16 +41,20 @@ def main():
 
     print(f"Subject {subject_id}")
     print(classification_report(y_train, y_pred, target_names=target_names))
-    ConfusionMatrixDisplay.from_predictions(y_train, y_pred, display_labels=target_names,
-                                            normalize='true')
-    f1 = f1_score(y_train, y_pred, average='macro')
-    plt.title("Confusion matrix on calibration data")
-    plt.savefig(f"./figures/{subject_id}_confusion_matrix_calibration.pdf")
-    plt.close()
 
-    csp = clf.steps[0][1]
-    csp.plot_filters(info=raw.pick('eeg').info, show_names=True, sphere='eeglab', colorbar=False)
-    plt.savefig(f"./figures/{subject_id}_csp_filters.pdf")
+    driving_epochs = get_driving_epochs_for_csp(subject_id, include_rest)
+    X_driving = driving_epochs.get_data(copy=True, picks=['eeg'])
+    y_driving = emg_classes_to_eeg_classes(driving_epochs.events[:, -1])
+
+    y_driving_pred = clf.predict(X_driving)
+    print(f"Transfer performance")
+    print(classification_report(y_driving, y_driving_pred, target_names=target_names))
+
+    ConfusionMatrixDisplay.from_predictions(y_driving, y_driving_pred, display_labels=target_names,
+                                            normalize='true')
+    f1 = f1_score(y_driving, y_driving_pred, average='macro')
+    plt.title("Confusion matrix on transfer")
+    plt.savefig(f"./figures/{subject_id}_confusion_matrix_transfer.pdf")
     plt.close()
 
     return f1

@@ -40,3 +40,14 @@ channel_names = [
     "UVEOG",
     "LVEOG",
 ]
+
+
+def emg_classes_to_eeg_classes(classes):
+    # Translates predictions encoded as -1, 0, 1 for left, rest, right
+    # Into 0, 1, 2 for left, right, rest
+    classes = classes.copy()
+    classes[classes == 0] = 2
+    classes[classes == -1] = 0
+    classes[classes == 1] = 1
+
+    return  classes

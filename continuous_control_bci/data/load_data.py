@@ -1,11 +1,12 @@
 from glob import glob
 
 import mne
+from pyxdf import pyxdf
 
 from continuous_control_bci.data.emg_events import make_rough_emg_events
 from continuous_control_bci.data.preprocessing import remove_driving_rests
-from continuous_control_bci.util import channel_names
-from plot_csp_continuous import get_streams_from_xdf, CHANNEL_TYPE_MAPPING
+from continuous_control_bci.dataclass import DrivingStreams
+from continuous_control_bci.util import channel_names, CHANNEL_TYPE_MAPPING
 
 
 def load_calibration(subject_id):
@@ -42,34 +43,26 @@ def adjust_info(raw: mne.io.Raw) -> mne.io.Raw:
     return raw
 
 
-def get_driving_epochs_for_csp(subject_id, include_rest=True):
-    fname = f"./data/sub-P{subject_id}/ses-S001/eeg/sub-P{subject_id}_ses-S001_task-Default_run-001_eeg.xdf"
-    raw, eeg_stream, emg_stream, _ = get_streams_from_xdf(fname)
-    raw.set_channel_types(CHANNEL_TYPE_MAPPING)
-    raw.set_montage("biosemi32", on_missing='raise')
-    raw.set_eeg_reference()
 
-    raw.set_eeg_reference(ref_channels=["Cz"], ch_type='eeg')
-    raw.drop_channels('Cz')
-    # raw = apply_causal_filters(raw)
-    # raw.set_eeg_reference()
-    raw = raw.filter(5, 35, picks='eeg')
-    # events = make_precise_emg_events(raw)
-    events = make_rough_emg_events(eeg_stream, emg_stream)
+def get_streams_from_xdf(fname) -> DrivingStreams:
+    streams, header = pyxdf.load_xdf(fname)
 
-    if include_rest:
-        event_ids = dict(left=-1, rest=0, right=1)
-    else:
-        event_ids = dict(left=-1, right=1)
-    epochs = mne.Epochs(
-        raw,
-        events,
-        event_ids,
-        tmin=0.5,
-        tmax=3.25,
-        baseline=None,
-        preload=True,
-        picks='eeg',
-    )
+    eeg_stream = None
+    emg_stream = None
+    unity_stream = None
+    position_stream = None
+    for stream in streams:
+        stream_name = stream['info']['name'][0]
+        if stream_name == "BioSemi":
+            eeg_stream = stream
+        if stream_name == 'PredictionStream':
+            emg_stream = stream
+        if stream_name == "UnityStream":
+            unity_stream = stream
+        if stream_name == "UnityPositionStream":
+            position_stream = stream
 
-    return epochs
+    raw = mne.io.RawArray(eeg_stream['time_series'].T[1:41, :] / 10e5, info=mne.create_info(channel_names, sfreq=2048))
+
+    return DrivingStreams(raw, eeg_stream, emg_stream, unity_stream, position_stream)
+

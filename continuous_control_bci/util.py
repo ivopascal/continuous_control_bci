@@ -41,6 +41,27 @@ channel_names = [
     "LVEOG",
 ]
 
+SUBJECT_IDS = ["061",
+               "066",
+               "126",
+               "280",
+               "302",
+               "336",
+               "381",
+               "406",
+               "530",
+               "587",
+               "643",
+               "656"
+               "682",
+               "744",
+               "812",
+               "840",
+               "854",
+               "942",
+               "968",
+               "986"]
+
 
 def emg_classes_to_eeg_classes(classes):
     # Translates predictions encoded as -1, 0, 1 for left, rest, right

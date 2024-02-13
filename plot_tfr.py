@@ -11,6 +11,7 @@ from mne.stats import permutation_cluster_1samp_test as pcluster_test
 
 from continuous_control_bci.data.load_data import load_from_file, adjust_info
 from continuous_control_bci.data.preprocessing import make_epochs, manual_clean_ica
+from continuous_control_bci.util import SUBJECT_IDS
 
 
 def plot_tfr(epochs, baseline=(-2.0, -1.0), tmin=-2.0, tmax=3.75, event_ids=None):
@@ -117,6 +118,6 @@ def main():
 
 if __name__ == "__main__":
     mne.set_log_level('warning') # noqa
-    subject_ids = ["066", "587", "812", "840", "854", "942", "986"]
-    for subject_id in subject_ids:
+
+    for subject_id in SUBJECT_IDS:
         main()

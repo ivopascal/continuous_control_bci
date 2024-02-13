@@ -1,8 +1,29 @@
+from glob import glob
+
 import mne
 
 from continuous_control_bci.data.emg_events import make_rough_emg_events
+from continuous_control_bci.data.preprocessing import remove_driving_rests
 from continuous_control_bci.util import channel_names
 from plot_csp_continuous import get_streams_from_xdf, CHANNEL_TYPE_MAPPING
+
+
+def load_calibration(subject_id):
+    raw = load_from_file(glob(f'./data/sub-P{subject_id}/motor-imagery-csp-{subject_id}-acquisition*.gdf')[0])
+
+    raw = adjust_info(raw)
+    return raw
+
+
+def load_driving(subject_id):
+    fname = f"./data/sub-P{subject_id}/ses-S001/eeg/sub-P{subject_id}_ses-S001_task-Default_run-001_eeg.xdf"
+    streams = get_streams_from_xdf(fname)
+    streams.raw.set_channel_types(CHANNEL_TYPE_MAPPING)
+    streams.raw.set_montage("biosemi32", on_missing='raise')
+
+    streams.raw = remove_driving_rests(streams)
+
+    return streams
 
 
 def load_from_file(filename: str):
@@ -23,7 +44,7 @@ def adjust_info(raw: mne.io.Raw) -> mne.io.Raw:
 
 def get_driving_epochs_for_csp(subject_id, include_rest=True):
     fname = f"./data/sub-P{subject_id}/ses-S001/eeg/sub-P{subject_id}_ses-S001_task-Default_run-001_eeg.xdf"
-    raw, eeg_stream, emg_stream = get_streams_from_xdf(fname)
+    raw, eeg_stream, emg_stream, _ = get_streams_from_xdf(fname)
     raw.set_channel_types(CHANNEL_TYPE_MAPPING)
     raw.set_montage("biosemi32", on_missing='raise')
     raw.set_eeg_reference()

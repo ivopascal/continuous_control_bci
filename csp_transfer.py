@@ -11,7 +11,7 @@ from continuous_control_bci.data.preprocessing import apply_causal_filters, make
 from continuous_control_bci.modelling.csp_classifier import create_csp_classifier
 from sklearn.metrics import f1_score
 
-from continuous_control_bci.util import emg_classes_to_eeg_classes
+from continuous_control_bci.util import emg_classes_to_eeg_classes, SUBJECT_IDS
 from plot_csp_continuous import get_streams_from_xdf, CHANNEL_TYPE_MAPPING
 
 
@@ -19,7 +19,7 @@ from plot_csp_continuous import get_streams_from_xdf, CHANNEL_TYPE_MAPPING
 
 
 def main():
-    raw = load_from_file(glob(f'./data/sub-P{subject_id}/motor-imagery-csp-{subject_id}-acquisition*.gdf')[0])
+    raw = load_from_file(glob(f'./data/sub-P{subject_id}/motor-imagery-csp-{subject_id}-acquisition*.gdf')[-1])
 
     raw = adjust_info(raw)
     raw = raw.set_eeg_reference(ref_channels=["Cz"], ch_type='eeg')
@@ -63,10 +63,8 @@ def main():
 if __name__ == "__main__":
     mne.set_log_level('warning') # noqa
 
-    subject_ids = ["066", "587", "812", "840", "854", "942", "986"]
-
     f1s = []
-    for subject_id in subject_ids:
+    for subject_id in SUBJECT_IDS:
         f1s.append(main())
 
     print(np.mean(f1s))

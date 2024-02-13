@@ -11,7 +11,8 @@ from mne.stats import permutation_cluster_1samp_test as pcluster_test
 
 from continuous_control_bci.data.load_data import load_from_file, adjust_info
 from continuous_control_bci.data.preprocessing import make_epochs, manual_clean_ica
-from plot_csp_continuous import get_streams_from_xdf, CHANNEL_TYPE_MAPPING, make_rough_emg_events
+from continuous_control_bci.util import SUBJECT_IDS
+from plot_csp_continuous import get_streams_from_xdf, CHANNEL_TYPE_MAPPING, make_rough_emg_events, subject_ids
 
 
 def plot_tfr(epochs, baseline=(-2.0, -1.0), tmin=-2.0, tmax=3.75, event_ids=None):
@@ -93,7 +94,7 @@ def plot_tfr(epochs, baseline=(-2.0, -1.0), tmin=-2.0, tmax=3.75, event_ids=None
 
 def main():
     fname = f"./data/sub-P{subject_id}/ses-S001/eeg/sub-P{subject_id}_ses-S001_task-Default_run-001_eeg.xdf"
-    raw, eeg_stream, emg_stream = get_streams_from_xdf(fname)
+    raw, eeg_stream, emg_stream, _ = get_streams_from_xdf(fname)
     raw.set_channel_types(CHANNEL_TYPE_MAPPING)
     raw.set_montage("biosemi32", on_missing='raise')
     raw.set_eeg_reference()
@@ -131,6 +132,5 @@ def main():
 
 if __name__ == "__main__":
     mne.set_log_level('warning') # noqa
-    subject_ids = ["066", "587", "812", "840", "854", "942", "986"]
-    for subject_id in subject_ids:
+    for subject_id in SUBJECT_IDS:
         main()

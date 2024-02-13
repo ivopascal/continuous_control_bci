@@ -6,14 +6,15 @@ import numpy as np
 import pyxdf
 import scipy
 from matplotlib import pyplot as plt
-from sklearn.metrics import classification_report, ConfusionMatrixDisplay
+from sklearn.metrics import classification_report, ConfusionMatrixDisplay, f1_score
 from sklearn.inspection import permutation_importance
 
 from continuous_control_bci.data.emg_events import make_rough_emg_events
 from continuous_control_bci.data.preprocessing import apply_causal_filters, \
     epochs_to_train_test, manual_clean_ica
+from continuous_control_bci.dataclass import DrivingStreams
 from continuous_control_bci.modelling.csp_classifier import create_csp_classifier
-from continuous_control_bci.util import channel_names, emg_classes_to_eeg_classes
+from continuous_control_bci.util import channel_names, emg_classes_to_eeg_classes, SUBJECT_IDS
 
 EEG_MAPPING = {name: ch_type for name, ch_type in zip(channel_names[:-8], ["eeg"] * len(channel_names[:-8]))}
 EMG_MAPPING = {name: ch_type for name, ch_type in zip(channel_names[-8:-4], ["emg"] * 4)}
@@ -26,26 +27,32 @@ CHANNEL_TYPE_MAPPING = {
 }
 
 
-def get_streams_from_xdf(fname):
+def get_streams_from_xdf(fname) -> DrivingStreams:
     streams, header = pyxdf.load_xdf(fname)
 
     eeg_stream = None
     emg_stream = None
+    unity_stream = None
+    position_stream = None
     for stream in streams:
         stream_name = stream['info']['name'][0]
         if stream_name == "BioSemi":
             eeg_stream = stream
         if stream_name == 'PredictionStream':
             emg_stream = stream
+        if stream_name == "UnityStream":
+            unity_stream = stream
+        if stream_name == "UnityPositionStream":
+            position_stream = stream
 
     raw = mne.io.RawArray(eeg_stream['time_series'].T[1:41, :] / 10e5, info=mne.create_info(channel_names, sfreq=2048))
 
-    return raw, eeg_stream, emg_stream
+    return DrivingStreams(raw, eeg_stream, emg_stream, unity_stream, position_stream)
 
 
 def main():
     fname = f"./data/sub-P{subject_id}/ses-S001/eeg/sub-P{subject_id}_ses-S001_task-Default_run-001_eeg.xdf"
-    raw, eeg_stream, emg_stream = get_streams_from_xdf(fname)
+    raw, eeg_stream, emg_stream, _ = get_streams_from_xdf(fname)
     raw.set_channel_types(CHANNEL_TYPE_MAPPING)
     raw.set_montage("biosemi32", on_missing='raise')
     raw.set_eeg_reference()
@@ -92,10 +99,18 @@ def main():
     plt.savefig(f"./figures/{subject_id}_csp_filters_continuous.pdf")
     plt.close()
 
+    f1 = f1_score(y_train, y_pred, average='macro')
+    return f1
+
 
 if __name__ == "__main__":
     mne.set_log_level('warning') # noqa
 
-    subject_ids = ["066", "587", "812", "840", "854", "942", "986"]
-    for subject_id in subject_ids:
-        main()
+    f1s = []
+    for subject_id in SUBJECT_IDS:
+        f1s.append(main())
+
+    print(np.mean(f1s))
+    print(np.std(f1s))
+    print(f1s)
+

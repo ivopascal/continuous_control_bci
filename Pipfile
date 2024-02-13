@@ -11,6 +11,8 @@ scipy = "*"
 seaborn = "*"
 pyxdf = "*"
 pyqt5 = "*"
+mne-icalabel = "*"
+torch = "*"
 
 [dev-packages]
 

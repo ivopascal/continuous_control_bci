@@ -15,4 +15,5 @@ def main():
 
 
 if __name__ == "__main__":
+    mne.set_log_level('warning') # noqa
     main()

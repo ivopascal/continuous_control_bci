@@ -16,9 +16,7 @@ def main():
     f1s = []
     for subject_id in SUBJECT_IDS:
         raw = load_calibration(subject_id)
-
-        raw = raw.set_eeg_reference(ref_channels=["Cz"], ch_type='eeg')
-        raw.drop_channels('Cz')
+        raw.set_eeg_reference()
         raw.filter(l_freq=5, h_freq=35)
 
         ica = read_ica(f'./data/ica/P{subject_id}-calibration-ica.fif')
@@ -28,7 +26,11 @@ def main():
         epochs = make_epochs(raw, include_rest=include_rest)
         X_train, _, y_train, _ = epochs_to_train_test(epochs)
         print("Training classifier. This may take a while..")
-        clf, y_pred = create_csp_classifier(X_train, y_train)
+        rank = {
+            'eeg': X_train.shape[1] - len(ica.exclude),
+            'mag': 32,
+        }
+        clf, y_pred = create_csp_classifier(X_train, y_train, rank)
         print("Classifier trained!")
         if include_rest:
             target_names = ["Left", "Right", "Rest"]

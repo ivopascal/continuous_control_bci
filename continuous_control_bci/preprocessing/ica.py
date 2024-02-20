@@ -15,9 +15,13 @@ def run_and_save_ica(raw, subject_id, overwrite=False, kind='calibration'):
     ica.save(save_path, overwrite=overwrite)
 
 
-def show_ica(raw, subject_id, kind='calibration', overwrite=True):
+def show_ica(raw, subject_id, kind='calibration', overwrite=True, filter=True):
     ica = read_ica(f'./data/ica/P{subject_id}-{kind}-ica.fif')
-    ica.plot_sources(raw.copy().filter(0.5, 40))
+    print(f"{kind} subject {subject_id}")
+
+    if filter:
+        raw = raw.copy().filter(0.2, 40)
+    ica.plot_components(inst=raw)
     plt.show()
     if overwrite:
         ica.save(f'./data/ica/P{subject_id}-{kind}-ica.fif', overwrite=True)

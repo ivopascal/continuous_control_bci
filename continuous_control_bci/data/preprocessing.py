@@ -179,16 +179,20 @@ def auto_clean_ica(raw):
 def remove_driving_rests(driving_streams: DrivingStreams) -> mne.io.RawArray:
     driving_start_marker = 'Lap1Completed'
     driving_end_marker = 'Lap6Completed'
-    raw_sections = []
-    start_t = None
+
+    onsets = []
+    durations = []
+    start_t = 0
+    end_t = None
     offset = driving_streams.eeg_stream['time_stamps'][0]
     for idx, item in enumerate(driving_streams.unity_stream['time_series']):
         if item[0] == driving_start_marker:
-            start_t = driving_streams.unity_stream['time_stamps'][idx]
-        if item[0] == driving_end_marker:
             end_t = driving_streams.unity_stream['time_stamps'][idx]
-            raw_sections.append(driving_streams.raw.copy().crop(start_t - offset, end_t - offset))
-            start_t = None
+            onsets.append(start_t - offset)
 
-    raw = mne.concatenate_raws(raw_sections)
-    return raw
+        if item[0] == driving_end_marker:
+            start_t = driving_streams.unity_stream['time_stamps'][idx]
+            durations.append(end_t - start_t)
+    durations.append(np.inf)
+    driving_streams.raw.set_annotations(mne.Annotations(onset=onsets, duration=durations, description=["BAD_break"] * len(onsets)))
+    return driving_streams.raw

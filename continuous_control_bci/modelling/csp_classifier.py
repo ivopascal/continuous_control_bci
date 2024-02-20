@@ -14,7 +14,7 @@ from continuous_control_bci.data.emg_events import make_rough_emg_events
 from continuous_control_bci.data.load_data import load_driving
 
 
-def create_csp_classifier(X_train: np.ndarray, y_train: np.ndarray) -> Tuple[Pipeline, np.ndarray]:
+def create_csp_classifier(X_train: np.ndarray, y_train: np.ndarray, rank) -> Tuple[Pipeline, np.ndarray]:
     """
     Trains a CSP classifier on all the data.
     First, however it runs 5-fold cross validation to make cross-validated predictions.
@@ -23,8 +23,9 @@ def create_csp_classifier(X_train: np.ndarray, y_train: np.ndarray) -> Tuple[Pip
     :param y_train:
     :return:
     """
-    clf_eeg = Pipeline([("CSP", CSP(n_components=6, reg=None, log=True, norm_trace=False)),
-                        ("classifier", LogisticRegression())])
+    clf_eeg = Pipeline([
+        ("CSP", CSP(n_components=6, reg='shrinkage', log=True, rank=rank)),
+        ("classifier", LogisticRegression())])
     y_pred = cross_val_predict(clf_eeg, X_train, y_train, cv=5)
 
     clf_eeg.fit(X_train, y_train)
@@ -32,7 +33,7 @@ def create_csp_classifier(X_train: np.ndarray, y_train: np.ndarray) -> Tuple[Pip
     return clf_eeg, y_pred
 
 
-def visualise_csp(subject_id, raw, csp, y_train, y_pred, include_rest='true', kind='calibration'):
+def visualise_csp(subject_id, raw, csp, y_train, y_pred, include_rest=True, kind='calibration'):
     print("Classifier trained!")
     if include_rest:
         target_names = ["Left", "Right", "Rest"]
@@ -57,16 +58,15 @@ def visualise_csp(subject_id, raw, csp, y_train, y_pred, include_rest='true', ki
 
 def get_driving_epochs_for_csp(subject_id, include_rest=True, ica_kind='driving'):
     driving_recording = load_driving(subject_id)
-    driving_recording.raw.set_eeg_reference()
 
-    driving_recording.raw.set_eeg_reference(ref_channels=["Cz"], ch_type='eeg')
-    driving_recording.raw.drop_channels('Cz')
+    driving_recording.raw.set_eeg_reference()
     driving_recording.raw.filter(5, 35, picks='eeg')
 
     ica = read_ica(f'./data/ica/P{subject_id}-{ica_kind}-ica.fif')
     ica.apply(driving_recording.raw)
 
-    events = make_rough_emg_events(driving_recording.eeg_stream, driving_recording.emg_stream)
+
+    events = make_rough_emg_events(driving_recording.eeg_stream, driving_recording.emg_prediction_stream)
 
     if include_rest:
         event_ids = dict(left=-1, rest=0, right=1)
@@ -83,4 +83,4 @@ def get_driving_epochs_for_csp(subject_id, include_rest=True, ica_kind='driving'
         picks='eeg',
     )
 
-    return epochs, driving_recording
+    return epochs, driving_recording, ica

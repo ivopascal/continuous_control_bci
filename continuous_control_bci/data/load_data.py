@@ -17,8 +17,14 @@ def load_calibration(subject_id):
 
 
 def load_driving(subject_id):
-    fname = f"./data/sub-P{subject_id}/ses-S001/eeg/sub-P{subject_id}_ses-S001_task-Default_run-001_eeg.xdf"
-    streams = get_streams_from_xdf(fname)
+    try:
+        fname = f"./data/sub-P{subject_id}/ses-S001/eeg/sub-P{subject_id}_ses-S001_task-Default_run-001_eeg.xdf"
+        streams = get_streams_from_xdf(fname)
+    except:
+        print(f"Failed to fetch data for {subject_id}")
+        exit(1)
+        return
+
     streams.raw.set_channel_types(CHANNEL_TYPE_MAPPING)
     streams.raw.set_montage("biosemi32", on_missing='raise')
 
@@ -41,7 +47,6 @@ def adjust_info(raw: mne.io.Raw) -> mne.io.Raw:
     raw = raw.set_montage("biosemi32", on_missing='raise')
 
     return raw
-
 
 
 def get_streams_from_xdf(fname) -> DrivingStreams:

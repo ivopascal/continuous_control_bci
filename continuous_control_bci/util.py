@@ -52,7 +52,7 @@ SUBJECT_IDS = ["061",
                "530",
                "587",
                "643",
-               "656"
+               "656",
                "682",
                "744",
                "812",
@@ -61,7 +61,6 @@ SUBJECT_IDS = ["061",
                "942",
                "968",
                "986"]
-
 
 EEG_MAPPING = {name: ch_type for name, ch_type in zip(channel_names[:-8], ["eeg"] * len(channel_names[:-8]))}
 EMG_MAPPING = {name: ch_type for name, ch_type in zip(channel_names[-8:-4], ["emg"] * 4)}
@@ -73,6 +72,7 @@ CHANNEL_TYPE_MAPPING = {
     **EOG_MAPPING,
 }
 
+
 def emg_classes_to_eeg_classes(classes):
     # Translates predictions encoded as -1, 0, 1 for left, rest, right
     # Into 0, 1, 2 for left, right, rest
@@ -81,4 +81,4 @@ def emg_classes_to_eeg_classes(classes):
     classes[classes == -1] = 0
     classes[classes == 1] = 1
 
-    return  classes
+    return classes

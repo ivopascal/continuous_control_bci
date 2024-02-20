@@ -1,6 +1,7 @@
 import matplotlib
 import mne
 from mne.preprocessing import read_ica
+from tqdm import tqdm
 
 from continuous_control_bci.data.load_data import load_calibration
 from continuous_control_bci.data.preprocessing import make_epochs
@@ -15,7 +16,7 @@ def main():
     event_ids = dict(left=0, right=1)
 
     all_epochs = []
-    for subject_id in SUBJECT_IDS:
+    for subject_id in tqdm(SUBJECT_IDS):
         raw = load_calibration(subject_id)
         raw.set_eeg_reference()
         raw.filter(l_freq=1, h_freq=35)

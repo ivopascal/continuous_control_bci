@@ -1,40 +1,35 @@
-from glob import glob
-
 import matplotlib
 import mne
-import numpy as np
 from matplotlib import pyplot as plt
+from mne.preprocessing import read_ica
 from tqdm import tqdm
 
 from continuous_control_bci.data.emg_events import make_rough_emg_events
-from continuous_control_bci.data.load_data import load_from_file, adjust_info
-from continuous_control_bci.data.preprocessing import make_epochs, auto_clean_ica, apply_causal_filters, \
-    manual_clean_ica, DRIVING_MRCP_BAD_ICS
+from continuous_control_bci.data.load_data import load_driving
 from continuous_control_bci.util import SUBJECT_IDS
-from plot_csp_continuous import CHANNEL_TYPE_MAPPING, get_streams_from_xdf
 
 
 def main():
     fname = f"./data/sub-P{subject_id}/ses-S001/eeg/sub-P{subject_id}_ses-S001_task-Default_run-001_eeg.xdf"
-    raw, eeg_stream, emg_stream, _ = get_streams_from_xdf(fname)
-    raw.set_channel_types(CHANNEL_TYPE_MAPPING)
-    raw.set_montage("biosemi32", on_missing='raise')
-    raw = raw.filter(0.1, 50, picks='eeg', method='iir', phase='forward')
-    manual_clean_ica(raw, subject_id=subject_id, ic_dict=DRIVING_MRCP_BAD_ICS)
+    driving_recording = load_driving(subject_id)
+    driving_recording.raw.set_eeg_reference()
 
     matplotlib.use('Agg')
 
-    raw = raw.set_eeg_reference(["Fz", 'Pz'])
+    # raw = raw.set_eeg_reference(["Fz", 'Pz'])
 
-    raw = raw.filter(0.1, 3, picks='eeg', method='iir', phase='forward')
+    driving_recording.raw.filter(0.1, 3, picks='eeg', method='iir', phase='forward')
     # raw = raw.filter(0.1, 3)
 
-    events = make_rough_emg_events(eeg_stream, emg_stream)
+    ica = read_ica(f'./data/ica/P{subject_id}-driving-ica.fif')
+    ica.apply(driving_recording.raw)
+
+    events = make_rough_emg_events(driving_recording.eeg_stream, driving_recording.emg_prediction_stream)
 
     event_ids = dict(left=-1, right=1)
 
     epochs = mne.Epochs(
-        raw,
+        driving_recording.raw,
         events,
         event_ids,
         tmin=-0.9 - 1.25,
@@ -73,21 +68,21 @@ def main():
     print(subject_id)
     ylim = [-10, 10]
 
-    # mne.viz.plot_compare_evokeds(evokeds, axes='topo', ylim=dict(eeg=ylim, csd=ylim),
-    #                              vlines=[0.0, 1.25])
-    #
-    # plt.savefig(f"./figures/{subject_id}_driving_MRCP.pdf")
-    # plt.close()
-    #
-    # mne.viz.plot_compare_evokeds(evokeds, picks=['C3'], ylim=dict(eeg=ylim, csd=ylim),
-    #                              vlines=[0.0, 1.25])
-    # plt.savefig(f"./figures/{subject_id}_driving_MRCP_C3.pdf")
-    # plt.close()
-    #
-    # mne.viz.plot_compare_evokeds(evokeds, picks=['C4'], ylim=dict(eeg=ylim, csd=ylim),
-    #                              vlines=[0.0, 1.25])
-    # plt.savefig(f"./figures/{subject_id}_driving_MRCP_C4.pdf")
-    # plt.close()
+    mne.viz.plot_compare_evokeds(evokeds, axes='topo', ylim=dict(eeg=ylim, csd=ylim),
+                                 vlines=[0.0, 1.25])
+
+    plt.savefig(f"./figures/{subject_id}_driving_MRCP.pdf")
+    plt.close()
+
+    mne.viz.plot_compare_evokeds(evokeds, picks=['C3'], ylim=dict(eeg=ylim, csd=ylim),
+                                 vlines=[0.0, 1.25])
+    plt.savefig(f"./figures/{subject_id}_driving_MRCP_C3.pdf")
+    plt.close()
+
+    mne.viz.plot_compare_evokeds(evokeds, picks=['C4'], ylim=dict(eeg=ylim, csd=ylim),
+                                 vlines=[0.0, 1.25])
+    plt.savefig(f"./figures/{subject_id}_driving_MRCP_C4.pdf")
+    plt.close()
 
     return evokeds
 

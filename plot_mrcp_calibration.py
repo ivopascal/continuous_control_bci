@@ -3,6 +3,7 @@ from glob import glob
 import matplotlib
 import mne
 from matplotlib import pyplot as plt
+from mne.preprocessing import read_ica
 from tqdm import tqdm
 
 from continuous_control_bci.data.load_data import load_from_file, adjust_info
@@ -15,16 +16,20 @@ def main():
 
     raw = adjust_info(raw)
     # raw.filter(l_freq=0.05, h_freq=100)
-    raw = raw.filter(0.1, 50, picks='eeg', method='iir', phase='forward')
-    manual_clean_ica(raw, subject_id=subject_id, ic_dict=CALIBRATION_MRCP_BAD_ICS)
+    # manual_clean_ica(raw, subject_id=subject_id, ic_dict=CALIBRATION_MRCP_BAD_ICS)
 
     matplotlib.use('Agg')
 
     # raw = raw.set_eeg_reference(['Cz'])
-    raw = raw.set_eeg_reference(["Fz", 'Pz'])
-
+    # raw = raw.set_eeg_reference(["Fz", 'Pz'])
+    raw = raw.set_eeg_reference()
     # auto_clean_ica(raw)
     raw = raw.filter(0.1, 3, picks='eeg', method='iir', phase='forward')
+
+    ica = read_ica(f'./data/ica/P{subject_id}-calibration-ica.fif')
+    ica.apply(raw)
+
+
     # raw = raw.filter(0.1, 3)
     # raw = mne.preprocessing.compute_current_source_density(raw)
     # raw.set_channel_types(CHANNEL_TYPE_MAPPING)
@@ -62,22 +67,22 @@ def main():
 
     print(subject_id)
     ylim = [-10, 10]
-    #
-    # mne.viz.plot_compare_evokeds(evokeds, axes='topo', ylim=dict(eeg=ylim, csd=ylim),
-    #                              vlines=[0.0, 1.25])
-    #
-    # plt.savefig(f"./figures/{subject_id}_MRCP.pdf")
-    # plt.close()
-    #
-    # mne.viz.plot_compare_evokeds(evokeds, picks=['C3'], ylim=dict(eeg=ylim, csd=ylim),
-    #                              vlines=[0.0, 1.25])
-    # plt.savefig(f"./figures/{subject_id}_MRCP_C3.pdf")
-    # plt.close()
-    #
-    # mne.viz.plot_compare_evokeds(evokeds, picks=['C4'], ylim=dict(eeg=ylim, csd=ylim),
-    #                              vlines=[0.0, 1.25])
-    # plt.savefig(f"./figures/{subject_id}_MRCP_C4.pdf")
-    # plt.close()
+
+    mne.viz.plot_compare_evokeds(evokeds, axes='topo', ylim=dict(eeg=ylim, csd=ylim),
+                                 vlines=[0.0, 1.25])
+
+    plt.savefig(f"./figures/{subject_id}_MRCP.pdf")
+    plt.close()
+
+    mne.viz.plot_compare_evokeds(evokeds, picks=['C3'], ylim=dict(eeg=ylim, csd=ylim),
+                                 vlines=[0.0, 1.25])
+    plt.savefig(f"./figures/{subject_id}_MRCP_C3.pdf")
+    plt.close()
+
+    mne.viz.plot_compare_evokeds(evokeds, picks=['C4'], ylim=dict(eeg=ylim, csd=ylim),
+                                 vlines=[0.0, 1.25])
+    plt.savefig(f"./figures/{subject_id}_MRCP_C4.pdf")
+    plt.close()
 
     return evokeds
 

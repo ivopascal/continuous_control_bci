@@ -52,10 +52,12 @@ def main():
     clf, y_pred = create_csp_classifier(X_train, y_train, rank)
     f1 = visualise_csp("all_subjects", raw, clf.steps[0][1], y_train, y_pred, include_rest=include_rest, kind='calibration')
     print(f"Global F1 {f1}")
+    for i in f1s:
+        print(i)
 
 
 if __name__ == "__main__":
-    # mne.set_log_level('warning') # noqa
+    mne.set_log_level('warning') # noqa
     main()
 
 

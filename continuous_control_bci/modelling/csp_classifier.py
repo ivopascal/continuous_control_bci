@@ -44,7 +44,7 @@ def visualise_csp(subject_id, raw, csp, y_train, y_pred, include_rest=True, kind
     print(classification_report(y_train, y_pred, target_names=target_names))
     ConfusionMatrixDisplay.from_predictions(y_train, y_pred, display_labels=target_names,
                                             normalize='true')
-    f1 = f1_score(y_train, y_pred, average='macro')
+    f1 = f1_score(y_train, y_pred, average='micro')
     plt.title(f"Confusion matrix on {kind} data")
     plt.savefig(f"./figures/{subject_id}_confusion_matrix_{kind}.pdf")
     plt.close()
@@ -64,7 +64,6 @@ def get_driving_epochs_for_csp(subject_id, include_rest=True, ica_kind='driving'
 
     ica = read_ica(f'./data/ica/P{subject_id}-{ica_kind}-ica.fif')
     ica.apply(driving_recording.raw)
-
 
     events = make_rough_emg_events(driving_recording.eeg_stream, driving_recording.emg_prediction_stream)
 

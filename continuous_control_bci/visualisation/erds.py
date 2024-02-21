@@ -61,9 +61,11 @@ def plot_tfr(epochs, subject_id, baseline=(-2.0, -1.0), tmin=-2.0, tmax=3.75, ev
                     mask_style="mask",
                 )
             else:
+                vmax = 0.006
                 tfr_ev.average().plot(
                     [ch],
-                    cmap="RdBu_r",
+                    cmap="viridis",
+                    cnorm=TwoSlopeNorm(vmin=-0.0, vcenter=vmax/2, vmax=vmax),
                     axes=ax,
                     colorbar=False,
                 )

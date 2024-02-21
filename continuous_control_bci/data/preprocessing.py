@@ -182,17 +182,31 @@ def remove_driving_rests(driving_streams: DrivingStreams) -> mne.io.RawArray:
 
     onsets = []
     durations = []
-    start_t = 0
-    end_t = None
     offset = driving_streams.eeg_stream['time_stamps'][0]
+    start_t = offset  # we reject the start
+    onsets.append(0)
+    previous_item = driving_end_marker
     for idx, item in enumerate(driving_streams.unity_stream['time_series']):
         if item[0] == driving_start_marker:
             end_t = driving_streams.unity_stream['time_stamps'][idx]
-            onsets.append(start_t - offset)
+
+            if previous_item == driving_end_marker:
+                durations.append(end_t - start_t)
+            elif previous_item == driving_start_marker:
+                durations[-1] = end_t - start_t
+            else:
+                raise ValueError(f"Did not expect previous marker {previous_item}")
+            previous_item = item[0]
 
         if item[0] == driving_end_marker:
-            start_t = driving_streams.unity_stream['time_stamps'][idx]
-            durations.append(end_t - start_t)
-    durations.append(np.inf)
+            if previous_item == driving_start_marker:
+                start_t = driving_streams.unity_stream['time_stamps'][idx]
+                onsets.append(start_t - offset)
+            previous_item = item[0]
+
+    if previous_item == driving_end_marker:
+        end_t = driving_streams.eeg_stream['time_stamps'][-1]
+        durations.append(end_t - start_t)
     driving_streams.raw.set_annotations(mne.Annotations(onset=onsets, duration=durations, description=["BAD_break"] * len(onsets)))
+    print(driving_streams.raw.times[-1] - np.sum(durations))
     return driving_streams.raw

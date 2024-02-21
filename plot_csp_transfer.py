@@ -40,7 +40,7 @@ def main():
         print(f"Subject {subject_id} calibration")
         print(classification_report(y_train, y_pred, target_names=target_names))
 
-        driving_epochs, _ = get_driving_epochs_for_csp(subject_id, include_rest, ica_kind='calibration')
+        driving_epochs, _, _ = get_driving_epochs_for_csp(subject_id, include_rest, ica_kind='calibration')
         X_driving = driving_epochs.get_data(copy=True, picks=['eeg'])
         y_driving = emg_classes_to_eeg_classes(driving_epochs.events[:, -1])
 
@@ -59,6 +59,8 @@ def main():
     print(np.mean(f1s))
     print(np.std(f1s))
     print(f1s)
+    for f1 in f1s:
+        print(f1)
 
 
 if __name__ == "__main__":

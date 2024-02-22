@@ -5,10 +5,10 @@ from mne.time_frequency import tfr_multitaper
 from mne.stats import permutation_cluster_1samp_test as pcluster_test
 
 
-def plot_tfr(epochs, subject_id, baseline=(-2.0, -1.0), tmin=-2.0, tmax=3.75, event_ids=None, kind=''):
+def plot_tfr(epochs, subject_id, baseline=(-2.0, -1.0), tmin=-2.0, tmax=3.75, event_ids=None, kind='', nobl_vmax=0.005):
     if event_ids is None:
         event_ids = dict(left=-1, rest=0, right=1)
-    freqs = np.arange(2, 35)  # frequencies from 2-35Hz
+    freqs = np.arange(5, 35)  # frequencies from 2-35Hz
     vmin, vmax = -1, 2  # set min and max ERDS values in plot
     cnorm = TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)  # min, center & max ERDS
 
@@ -61,11 +61,10 @@ def plot_tfr(epochs, subject_id, baseline=(-2.0, -1.0), tmin=-2.0, tmax=3.75, ev
                     mask_style="mask",
                 )
             else:
-                vmax = 0.006
                 tfr_ev.average().plot(
                     [ch],
                     cmap="viridis",
-                    cnorm=TwoSlopeNorm(vmin=-0.0, vcenter=vmax/2, vmax=vmax),
+                    cnorm=TwoSlopeNorm(vmin=0.0, vcenter=nobl_vmax/2, vmax=nobl_vmax),
                     axes=ax,
                     colorbar=False,
                 )

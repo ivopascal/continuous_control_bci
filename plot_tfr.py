@@ -36,9 +36,8 @@ def main():
         all_epochs.append(epochs)
 
     all_epochs = mne.concatenate_epochs(all_epochs)
-    plot_tfr(all_epochs, "all_subjects", baseline=(-3, 0), tmin=tmin, tmax=tmax, event_ids=event_ids, kind='calibration')
-    plot_tfr(all_epochs, "all_subjects", baseline=None, tmin=tmin, tmax=tmax, event_ids=event_ids, kind='calibration')
-
+    plot_tfr(all_epochs, "all_subjects", baseline=(-3, 0), tmin=tmin, tmax=tmax, event_ids=event_ids, kind='calibration', nobl_vmax=0.003)
+    plot_tfr(all_epochs, "all_subjects", baseline=None, tmin=tmin, tmax=tmax, event_ids=event_ids, kind='calibration', nobl_vmax=0.003)
 
 if __name__ == "__main__":
     mne.set_log_level('warning') # noqa

@@ -36,12 +36,14 @@ def main():
         matplotlib.use('Agg')
         events = make_rough_emg_events(driving_recording.eeg_stream, driving_recording.emg_prediction_stream)
 
+        reject_threshold = 100e-3
         epochs = mne.Epochs(
             driving_recording.raw,
             events,
             event_ids,
             tmin=tmin - buffer - time_offset,
             tmax=tmax + buffer - time_offset,
+            reject={"csd": reject_threshold},
             baseline=None,
             preload=True,
         )
@@ -55,8 +57,8 @@ def main():
         plot_tfr(epochs, subject_id, baseline=None, tmin=tmin, tmax=tmax, event_ids=event_ids, kind='driving')
 
     all_epochs = mne.concatenate_epochs(all_epochs)
-    plot_tfr(all_epochs, "all_subjects", baseline=(-3, 0), tmin=tmin, tmax=tmax, event_ids=event_ids,  kind='driving')
-    plot_tfr(all_epochs, "all_subjects", baseline=None, tmin=tmin, tmax=tmax, event_ids=event_ids, kind='driving')
+    plot_tfr(all_epochs, "all_subjects", baseline=(-3, 0), tmin=tmin, tmax=tmax, event_ids=event_ids,  kind='driving', nobl_vmax=0.003)
+    plot_tfr(all_epochs, "all_subjects", baseline=None, tmin=tmin, tmax=tmax, event_ids=event_ids, kind='driving', nobl_vmax=0.003)
 
 
 if __name__ == "__main__":

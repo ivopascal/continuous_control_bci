@@ -10,16 +10,12 @@ from continuous_control_bci.util import SUBJECT_IDS
 
 
 def main():
-    fname = f"./data/sub-P{subject_id}/ses-S001/eeg/sub-P{subject_id}_ses-S001_task-Default_run-001_eeg.xdf"
     driving_recording = load_driving(subject_id)
     driving_recording.raw.set_eeg_reference()
 
     matplotlib.use('Agg')
 
-    # raw = raw.set_eeg_reference(["Fz", 'Pz'])
-
     driving_recording.raw.filter(0.1, 3, picks='eeg', method='iir', phase='forward')
-    # raw = raw.filter(0.1, 3)
 
     ica = read_ica(f'./data/ica/P{subject_id}-driving-ica.fif')
     ica.apply(driving_recording.raw)
@@ -28,37 +24,25 @@ def main():
 
     event_ids = dict(left=-1, right=1)
 
+    ch_type = driving_recording.raw.get_channel_types()[0]
+    if ch_type == "eeg":
+        reject = {"eeg": 100e-6}
+    elif ch_type == "csd":
+        reject = {"csd": 100e-3}
+    else:
+        raise ValueError
     epochs = mne.Epochs(
         driving_recording.raw,
         events,
         event_ids,
         tmin=-0.9 - 1.25,
-        tmax=5,
+        tmax=5 - 1.25,
         baseline=None,
+        reject=reject,
         preload=True,
-        picks='eeg',
+        picks=ch_type,
     )
     epochs.shift_time(1.25)
-    # evokeds_average = epochs.average(by_event_type=True)
-
-    # times = np.arange(-0.25, 5, 0.5)
-    # evokeds_average[0].plot_topomap(times=times, average=0.5)
-    # fig = plt.gcf()
-    # fig.suptitle(f'Evoked left hand {subject_id}')
-    # plt.show()
-    #
-    # evokeds_average[1].plot_topomap(times=times, average=0.5)
-    # fig = plt.gcf()
-    # fig.suptitle(f'Evoked right hand {subject_id}')
-    # plt.show()
-
-    # print(subject_id)
-    # for evk in evokeds_average:
-    #     evk.plot(gfp=True, spatial_colors=True, ylim=dict(eeg=[-12, 12]))
-
-    # for evoked in evokeds_average:
-    #     evoked.plot(picks=['C3', 'Cz', 'C4'])
-    #     plt.title(f"{evoked.comment}")
 
     evokeds = dict(
         left=list(epochs["left"].iter_evoked()),

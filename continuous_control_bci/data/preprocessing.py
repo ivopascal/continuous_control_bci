@@ -35,12 +35,21 @@ def make_epochs(raw: mne.io.Raw, include_rest=True, tmin=1.25, tmax=5) -> mne.Ep
 
     event_ids = dict(left=0, right=1)
 
+    ch_type = raw.get_channel_types()[0]
+    if ch_type == "eeg":
+        reject = {"eeg": 100e-6}
+    elif ch_type == "csd":
+        reject = {"csd": 100e-3}
+    else:
+        raise ValueError
+
     epochs = mne.Epochs(
         raw,
         events,
         event_ids,
         tmin,
         tmax,
+        reject=reject,
         baseline=None,
         preload=True,
     )
@@ -65,6 +74,7 @@ def make_epochs(raw: mne.io.Raw, include_rest=True, tmin=1.25, tmax=5) -> mne.Ep
             dict(rest=2),
             tmin,
             tmax,
+            reject=reject,
             baseline=None,
             preload=True,
         )
@@ -206,7 +216,6 @@ def remove_driving_rests(driving_streams: DrivingStreams) -> mne.io.RawArray:
 
     if previous_item == driving_end_marker:
         end_t = driving_streams.eeg_stream['time_stamps'][-1]
-        durations.append(end_t - start_t)
+        durations.append(end_t - start_t -1)
     driving_streams.raw.set_annotations(mne.Annotations(onset=onsets, duration=durations, description=["BAD_break"] * len(onsets)))
-    print(driving_streams.raw.times[-1] - np.sum(durations))
     return driving_streams.raw

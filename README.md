@@ -27,5 +27,9 @@ Then you can inspect each decomposition with `show_ica.py`. Any ICs marked as ba
 Subsequent analyses will run with those ICs are rejected.
 
 
+## Notebooks
+There are several Jupyter notebooks in `/notebooks`. These are kept for posteriority and may be considered useful, 
+but they are not intended to be reproduced.  
+
 ## Questions
 Any questions may be directed to `ivo.de.jong@rug.nl`.

@@ -3,3 +3,4 @@
 data*.gdf
 *.xdf
 /data/
+/notebooks/per_subject_f1s.pdf
